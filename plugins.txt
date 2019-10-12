@@ -9,7 +9,6 @@ gradle:latest
 gravatar:latest
 hipchat:latest
 junit:latest
-job-dsl:latest
 maven-plugin:latest
 mailer:latest
 pipeline-build-step:latest
