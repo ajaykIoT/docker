@@ -1,6 +1,6 @@
 FROM openjdk:8-jdk-stretch
 
-RUN apt-get update && apt-get upgrade -y && apt-get install -y git curl python-pip && apt-get install vim && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get upgrade -y && apt-get install -y git curl python-pip && apt-get install vim -y && rm -rf /var/lib/apt/lists/*
 
 ARG user=jenkins
 ARG group=jenkins
@@ -32,16 +32,11 @@ VOLUME $JENKINS_HOME
 RUN mkdir -p /usr/share/jenkins/ref/init.groovy.d
 
 RUN mkdir -p /etc/jenkins_jobs
-
-# Use tini as subreaper in Docker container to adopt zombie processes
-#ARG TINI_VERSION=v0.16.1
-#COPY tini_pub.gpg ${JENKINS_HOME}/tini_pub.gpg
-#RUN curl -fsSL https://github.com/krallin/tini/releases/download/${TINI_VERSION}/tini-static-$(dpkg --print-architecture) -o /sbin/tini \
-  #&& curl -fsSL https://github.com/krallin/tini/releases/download/${TINI_VERSION}/tini-static-$(dpkg --print-architecture).asc -o /sbin/tini.asc \
-  #&& gpg --no-tty --import ${JENKINS_HOME}/tini_pub.gpg \
-  #&& gpg --verify /sbin/tini.asc \
-  #&& rm -rf /sbin/tini.asc /root/.gnupg \
-  #&& chmod +x /sbin/tini
+COPY jenkins_jobs.ini /etc/jenkins_jobs/jenkins_jobs.ini
+COPY test-job.yml /etc/jenkins_jobs/test-job.yml
+RUN chmod 777 /etc/jenkins_jobs/jenkins_jobs.ini
+RUN chmod 777 /etc/jenkins_jobs
+RUN chmod 777 /var/jenkins_home
 
 RUN pip install jenkins-job-builder
 
@@ -70,14 +65,13 @@ USER ${user}
 
 # COPY HelloWorld_job.groovy /usr/share/jenkins/ref/init.groovy.d/executors.groovy
 COPY jenkins-support /usr/local/bin/jenkins-support
-COPY test-job.yml /var/jenkins_home/jobs/test-job.yml
 COPY jenkins.sh /usr/local/bin/jenkins.sh
 #COPY tini-shim.sh /bin/tini
 ENTRYPOINT ["/usr/local/bin/jenkins.sh"]
 
 # from a derived Dockerfile, can use `RUN plugins.sh active.txt` to setup /usr/share/jenkins/ref/plugins from a support bundle
-COPY jenkins_jobs.ini /etc/jenkins_jobs/jenkins_jobs.ini
 COPY plugins.sh /usr/local/bin/plugins.sh
 COPY install-plugins.sh /usr/local/bin/install-plugins.sh
 COPY plugins.txt /usr/share/jenkins/ref/plugins.txt
 RUN /usr/local/bin/install-plugins.sh < /usr/share/jenkins/ref/plugins.txt
+# RUN jenkins-jobs update -jr /var/jenkins_home/jobs

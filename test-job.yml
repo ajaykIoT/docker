@@ -1,4 +1,4 @@
--job:
+- job:
     name: test_job
     description: 'auto'
     project-type: freestyle
